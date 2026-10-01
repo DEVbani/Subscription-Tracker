@@ -25,17 +25,25 @@ export default function App() {
         <Route element={<ProtectedRoute />}>
           <Route element={<DashboardLayout />}>
             <Route path="/dashboard" element={<Dashboard />} />
+
             <Route path="/subscriptions" element={<Subscriptions />} />
+
             <Route path="/subscriptions/new" element={<AddSubscription />} />
-            <Route path="/subscriptions/:id" element={<SubscriptionDetails />} />
+
+            <Route
+              path="/subscriptions/:id"
+              element={<SubscriptionDetails />}
+            />
+
             <Route path="/calendar" element={<Calendar />} />
+
             <Route path="/analytics" element={<Analytics />} />
+
             <Route path="/settings" element={<Settings />} />
           </Route>
         </Route>
 
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
-        <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     </AuthProvider>
   );

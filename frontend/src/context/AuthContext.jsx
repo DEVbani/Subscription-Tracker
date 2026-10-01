@@ -1,39 +1,69 @@
 import { createContext, useContext, useEffect, useState } from "react";
 
+import api from "../services/api";
+
 const AuthContext = createContext(null);
 
-const demoUser = {
-  id: "demo-user",
-  name: "Bani",
-  email: "bani@example.com",
-};
-
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(() => {
-    const saved = localStorage.getItem("subtrack_user");
-    return saved ? JSON.parse(saved) : null;
-  });
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (user) localStorage.setItem("subtrack_user", JSON.stringify(user));
-    else localStorage.removeItem("subtrack_user");
-  }, [user]);
+    restoreSession();
+  }, []);
 
-  const login = async (email, password) => {
-    // Demo-only UI authentication. Replace with API call later.
-    if (!email || !password) throw new Error("Email and password are required.");
-    setUser({ ...demoUser, email });
-  };
+  async function restoreSession() {
+    try {
+      const response = await api.get("/auth/me");
+      setUser(response.data.user);
+    } catch {
+      setUser(null);
+    } finally {
+      setLoading(false);
+    }
+  }
 
-  const register = async (name, email, password) => {
-    if (!name || !email || !password) throw new Error("All fields are required.");
-    setUser({ id: "demo-user", name, email });
-  };
+  async function login(email, password) {
+    const response = await api.post("/auth/login", {
+      email,
+      password,
+    });
 
-  const logout = () => setUser(null);
+    setUser(response.data.user);
+
+    return response.data.user;
+  }
+
+  async function register(name, email, password) {
+    const response = await api.post("/auth/register", {
+      name,
+      email,
+      password,
+    });
+
+    setUser(response.data.user);
+
+    return response.data.user;
+  }
+
+  async function logout() {
+    try {
+      await api.post("/auth/logout");
+    } finally {
+      setUser(null);
+    }
+  }
 
   return (
-    <AuthContext.Provider value={{ user, login, register, logout }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        loading,
+        login,
+        register,
+        logout,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

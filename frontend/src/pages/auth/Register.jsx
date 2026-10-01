@@ -8,11 +8,16 @@ import Button from "../../components/ui/Button";
 export default function Register() {
   const { user, register } = useAuth();
   const navigate = useNavigate();
-  const [showPassword, setShowPassword] = useState(false);
-  const [form, setForm] = useState({ name: "", email: "", password: "", confirmPassword: "" });
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+  });
+
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-
+  const [showPassword, setShowPassword] = useState(false);
   if (user) return <Navigate to="/dashboard" replace />;
 
   const submit = async (e) => {
@@ -30,11 +35,13 @@ export default function Register() {
     }
 
     setLoading(true);
+
     try {
       await register(form.name, form.email, form.password);
-      navigate("/dashboard", { replace: true });
-    } catch (err) {
-      setError(err.message);
+
+      navigate("/dashboard");
+    } catch (error) {
+      setError(error.response?.data?.message || "Unable to create account.");
     } finally {
       setLoading(false);
     }
@@ -52,8 +59,12 @@ export default function Register() {
       </div>
 
       <div className="mb-7">
-        <h2 className="text-3xl font-bold tracking-tight text-slate-900">Create your account</h2>
-        <p className="mt-2 text-sm text-slate-500">Start tracking recurring spending today.</p>
+        <h2 className="text-3xl font-bold tracking-tight text-slate-900">
+          Create your account
+        </h2>
+        <p className="mt-2 text-sm text-slate-500">
+          Start tracking recurring spending today.
+        </p>
       </div>
 
       {error && (
@@ -68,6 +79,7 @@ export default function Register() {
           placeholder="Your name"
           value={form.name}
           onChange={(e) => setForm({ ...form, name: e.target.value })}
+          autoComplete='username'
           required
         />
         <Input
@@ -76,17 +88,21 @@ export default function Register() {
           placeholder="you@example.com"
           value={form.email}
           onChange={(e) => setForm({ ...form, email: e.target.value })}
+          autoComplete='email'
           required
         />
 
         <div className="space-y-2">
-          <label className="block text-sm font-medium text-slate-700">Password</label>
+          <label className="block text-sm font-medium text-slate-700">
+            Password
+          </label>
           <div className="relative">
             <input
               type={showPassword ? "text" : "password"}
               placeholder="Minimum 8 characters"
               value={form.password}
               onChange={(e) => setForm({ ...form, password: e.target.value })}
+              autoComplete="new-password"
               className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 pr-11 text-sm outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
               required
             />
@@ -105,7 +121,10 @@ export default function Register() {
           type="password"
           placeholder="Repeat your password"
           value={form.confirmPassword}
-          onChange={(e) => setForm({ ...form, confirmPassword: e.target.value })}
+          onChange={(e) =>
+            setForm({ ...form, confirmPassword: e.target.value })
+          }
+          autoComplete="new-password"
           required
         />
 
@@ -116,7 +135,10 @@ export default function Register() {
 
       <p className="mt-7 text-center text-sm text-slate-500">
         Already have an account?{" "}
-        <Link to="/login" className="font-semibold text-blue-600 hover:text-blue-700">
+        <Link
+          to="/login"
+          className="font-semibold text-blue-600 hover:text-blue-700"
+        >
           Sign in
         </Link>
       </p>
