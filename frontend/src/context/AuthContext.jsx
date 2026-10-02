@@ -1,4 +1,9 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
 
 import api from "../services/api";
 
@@ -15,9 +20,18 @@ export function AuthProvider({ children }) {
   async function restoreSession() {
     try {
       const response = await api.get("/auth/me");
+
       setUser(response.data.user);
     } catch {
-      setUser(null);
+      try {
+        await api.post("/auth/refresh");
+
+        const response = await api.get("/auth/me");
+
+        setUser(response.data.user);
+      } catch {
+        setUser(null);
+      }
     } finally {
       setLoading(false);
     }

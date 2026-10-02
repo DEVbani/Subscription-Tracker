@@ -1,45 +1,119 @@
-import { TrendingUp, PieChart, IndianRupee } from "lucide-react";
-import Card from "../../components/ui/Card";
-import StatCard from "../../components/dashboard/StatCard";
-import { subscriptions } from "../../data/subscriptions";
-import { formatCurrency } from "../../utils/format";
+import {
+  useSubscriptions,
+} from "../../context/SubscriptionContext";
+
+import {
+  getMonthlyCost,
+  formatCurrency,
+} from "../../utils/subscription";
 
 export default function Analytics() {
-  const total = subscriptions.reduce((sum, s) => sum + s.price, 0);
+  const {
+    subscriptions,
+  } = useSubscriptions();
+
+  const active =
+    subscriptions.filter(
+      (item) =>
+        item.status === "active"
+    );
+
+  const categories = {};
+
+  active.forEach(
+    (subscription) => {
+      const category =
+        subscription.category;
+
+      categories[category] =
+        (categories[category] || 0) +
+        getMonthlyCost(
+          subscription
+        );
+    }
+  );
+
+  const sorted =
+    Object.entries(categories)
+      .sort(
+        (a, b) => b[1] - a[1]
+      );
 
   return (
-    <div className="space-y-7">
-      <div>
-        <p className="text-sm font-medium text-blue-600">Insights</p>
-        <h1 className="mt-1 text-2xl font-bold text-slate-900 sm:text-3xl">Analytics</h1>
-        <p className="mt-2 text-sm text-slate-500">Understand where your recurring money goes.</p>
-      </div>
+    <div>
 
-      <div className="grid gap-4 md:grid-cols-3">
-        <StatCard title="Monthly total" value={formatCurrency(total)} note="Current recurring cost" icon={IndianRupee} />
-        <StatCard title="Yearly estimate" value={formatCurrency(total * 12)} note="Based on active subscriptions" icon={TrendingUp} />
-        <StatCard title="Categories" value="5" note="Across your subscriptions" icon={PieChart} />
-      </div>
+      <h1 className="text-3xl font-bold">
+        Analytics
+      </h1>
 
-      <Card className="p-6">
-        <h2 className="font-semibold text-slate-900">Spending by subscription</h2>
+      <p className="mt-1 text-slate-500">
+        Understand where your recurring spending goes.
+      </p>
+
+      <div className="mt-8 rounded-2xl border border-slate-200 bg-white p-6">
+
+        <h2 className="text-lg font-semibold">
+          Monthly spending by category
+        </h2>
+
         <div className="mt-6 space-y-5">
-          {subscriptions.map((s) => {
-            const percent = Math.round((s.price / total) * 100);
-            return (
-              <div key={s.id}>
-                <div className="mb-2 flex justify-between text-sm">
-                  <span className="font-medium text-slate-700">{s.name}</span>
-                  <span className="text-slate-500">{formatCurrency(s.price)} · {percent}%</span>
+
+          {sorted.map(
+            ([category, amount]) => {
+
+              const total =
+                active.reduce(
+                  (sum, item) =>
+                    sum +
+                    getMonthlyCost(
+                      item
+                    ),
+                  0
+                );
+
+              const percentage =
+                total === 0
+                  ? 0
+                  : (amount / total) *
+                    100;
+
+              return (
+                <div key={category}>
+
+                  <div className="flex justify-between text-sm">
+
+                    <span>
+                      {category}
+                    </span>
+
+                    <span className="font-medium">
+                      {formatCurrency(
+                        amount
+                      )}
+                    </span>
+
+                  </div>
+
+                  <div className="mt-2 h-3 overflow-hidden rounded-full bg-slate-100">
+
+                    <div
+                      className="h-full rounded-full bg-blue-600"
+                      style={{
+                        width: `${percentage}%`,
+                      }}
+                    />
+
+                  </div>
+
                 </div>
-                <div className="h-2 overflow-hidden rounded-full bg-slate-100">
-                  <div className="h-full rounded-full bg-blue-500" style={{ width: `${percent}%` }} />
-                </div>
-              </div>
-            );
-          })}
+              );
+            }
+          )}
+
         </div>
-      </Card>
+
+      </div>
+
     </div>
   );
 }

@@ -1,8 +1,12 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL:"http://localhost:5000/api",
+  baseURL:
+    import.meta.env.VITE_API_URL ||
+    "http://localhost:5000/api",
+
   withCredentials: true,
+
   headers: {
     "Content-Type": "application/json",
   },
@@ -12,6 +16,7 @@ let refreshPromise = null;
 
 api.interceptors.response.use(
   (response) => response,
+
   async (error) => {
     const originalRequest = error.config;
 
@@ -28,9 +33,11 @@ api.interceptors.response.use(
     originalRequest._retry = true;
 
     try {
-      refreshPromise ??= api.post("/auth/refresh").finally(() => {
-        refreshPromise = null;
-      });
+      refreshPromise ??= api
+        .post("/auth/refresh")
+        .finally(() => {
+          refreshPromise = null;
+        });
 
       await refreshPromise;
 

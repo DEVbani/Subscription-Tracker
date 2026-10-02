@@ -1,80 +1,141 @@
-import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, Pencil, Trash2, CalendarDays, CreditCard } from "lucide-react";
-import Card from "../../components/ui/Card";
-import Button from "../../components/ui/Button";
-import { subscriptions } from "../../data/subscriptions";
-import { formatCurrency, formatDate } from "../../utils/format";
+import {
+  Link,
+  useParams,
+} from "react-router-dom";
+
+import {
+  useSubscriptions,
+} from "../../context/SubscriptionContext";
+
+import {
+  formatCurrency,
+  formatDate,
+  getMonthlyCost,
+  getYearlyCost,
+} from "../../utils/subscription";
 
 export default function SubscriptionDetails() {
   const { id } = useParams();
-  const subscription = subscriptions.find((item) => item.id === id);
+
+  const {
+    subscriptions,
+  } = useSubscriptions();
+
+  const subscription =
+    subscriptions.find(
+      (item) => item._id === id
+    );
 
   if (!subscription) {
     return (
-      <div className="py-20 text-center">
-        <h1 className="text-xl font-bold text-slate-900">Subscription not found</h1>
-        <Link to="/subscriptions" className="mt-3 inline-block text-sm font-semibold text-blue-600">
-          Back to subscriptions
-        </Link>
+      <div>
+        Subscription not found.
       </div>
     );
   }
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
-      <Link to="/subscriptions" className="inline-flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-slate-800">
-        <ArrowLeft size={16} />
-        Back to subscriptions
-      </Link>
+    <div className="mx-auto max-w-3xl">
 
-      <Card className="overflow-hidden">
-        <div className="flex flex-col gap-5 border-b border-slate-100 p-6 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-4">
-            <div className={`grid h-16 w-16 place-items-center rounded-2xl text-xl font-bold text-white ${subscription.color}`}>
-              {subscription.initials}
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-slate-900">{subscription.name}</h1>
-              <p className="mt-1 text-sm text-slate-500">{subscription.category}</p>
-            </div>
+      <div className="rounded-2xl border border-slate-200 bg-white p-8">
+
+        <div className="flex items-start justify-between">
+
+          <div>
+            <p className="text-sm text-slate-500">
+              {subscription.category}
+            </p>
+
+            <h1 className="mt-1 text-3xl font-bold">
+              {subscription.name}
+            </h1>
           </div>
-          <span className="w-fit rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700">
-            Active
+
+          <span className="rounded-full bg-green-50 px-3 py-1 text-sm text-green-700">
+            {subscription.status}
           </span>
+
         </div>
 
-        <div className="grid gap-4 p-6 sm:grid-cols-3">
-          <Info icon={CreditCard} label="Price" value={`${formatCurrency(subscription.price)} / ${subscription.cycle.toLowerCase()}`} />
-          <Info icon={CalendarDays} label="Next payment" value={formatDate(subscription.nextPayment)} />
-          <Info icon={CreditCard} label="Category" value={subscription.category} />
+        <div className="mt-8 grid gap-5 sm:grid-cols-2">
+
+          <Info
+            title="Price"
+            value={formatCurrency(
+              subscription.price
+            )}
+          />
+
+          <Info
+            title="Billing"
+            value={subscription.billingCycle}
+          />
+
+          <Info
+            title="Next payment"
+            value={formatDate(
+              subscription.nextPaymentDate
+            )}
+          />
+
+          <Info
+            title="Monthly cost"
+            value={formatCurrency(
+              getMonthlyCost(
+                subscription
+              )
+            )}
+          />
+
+          <Info
+            title="Yearly cost"
+            value={formatCurrency(
+              getYearlyCost(
+                subscription
+              )
+            )}
+          />
+
         </div>
 
-        <div className="border-t border-slate-100 p-6">
-          <h2 className="font-semibold text-slate-900">Notes</h2>
-          <p className="mt-2 text-sm leading-6 text-slate-500">{subscription.description}</p>
-        </div>
+        {subscription.notes && (
+          <div className="mt-8">
+            <h3 className="font-semibold">
+              Notes
+            </h3>
 
-        <div className="flex justify-end gap-3 border-t border-slate-100 p-5">
-          <Button variant="danger">
-            <Trash2 size={16} />
-            Delete
-          </Button>
-          <Button>
-            <Pencil size={16} />
-            Edit
-          </Button>
-        </div>
-      </Card>
+            <p className="mt-2 text-slate-600">
+              {subscription.notes}
+            </p>
+          </div>
+        )}
+
+        <Link
+          to={`/subscriptions/${id}/edit`}
+          className="mt-8 inline-block rounded-xl bg-blue-600 px-5 py-3 font-medium text-white"
+        >
+          Edit subscription
+        </Link>
+
+      </div>
+
     </div>
   );
 }
 
-function Info({ icon: Icon, label, value }) {
+function Info({
+  title,
+  value,
+}) {
   return (
     <div className="rounded-xl bg-slate-50 p-4">
-      <Icon size={18} className="text-blue-600" />
-      <p className="mt-3 text-xs text-slate-400">{label}</p>
-      <p className="mt-1 text-sm font-semibold text-slate-800">{value}</p>
+      <p className="text-sm text-slate-500">
+        {title}
+      </p>
+
+      <p className="mt-1 font-semibold capitalize">
+        {value}
+      </p>
     </div>
   );
 }

@@ -7,26 +7,31 @@ import {
 
 import api from "../services/api";
 
-const SubscriptionContext = createContext(null);
+const SubscriptionContext =
+  createContext(null);
 
-export function SubscriptionProvider({ children }) {
-  const [subscriptions, setSubscriptions] = useState([]);
-  const [loading, setLoading] = useState(true);
+export function SubscriptionProvider({
+  children,
+}) {
+  const [subscriptions, setSubscriptions] =
+    useState([]);
 
-  useEffect(() => {
-    loadSubscriptions();
-  }, []);
+  const [loading, setLoading] =
+    useState(true);
 
   async function loadSubscriptions() {
     try {
       setLoading(true);
 
-      const response = await api.get("/subscriptions");
+      const response =
+        await api.get("/subscriptions");
 
-      setSubscriptions(response.data.subscriptions);
+      setSubscriptions(
+        response.data.subscriptions
+      );
     } catch (error) {
       console.error(
-        "Failed to load subscriptions:",
+        "Failed to load subscriptions",
         error
       );
     } finally {
@@ -34,10 +39,14 @@ export function SubscriptionProvider({ children }) {
     }
   }
 
-  async function addSubscription(subscription) {
+  useEffect(() => {
+    loadSubscriptions();
+  }, []);
+
+  async function addSubscription(data) {
     const response = await api.post(
       "/subscriptions",
-      subscription
+      data
     );
 
     setSubscriptions((current) => [
@@ -48,11 +57,15 @@ export function SubscriptionProvider({ children }) {
     return response.data.subscription;
   }
 
-  async function updateSubscription(id, data) {
-    const response = await api.patch(
-      `/subscriptions/${id}`,
-      data
-    );
+  async function updateSubscription(
+    id,
+    data
+  ) {
+    const response =
+      await api.patch(
+        `/subscriptions/${id}`,
+        data
+      );
 
     setSubscriptions((current) =>
       current.map((subscription) =>
@@ -66,7 +79,9 @@ export function SubscriptionProvider({ children }) {
   }
 
   async function deleteSubscription(id) {
-    await api.delete(`/subscriptions/${id}`);
+    await api.delete(
+      `/subscriptions/${id}`
+    );
 
     setSubscriptions((current) =>
       current.filter(
@@ -93,5 +108,7 @@ export function SubscriptionProvider({ children }) {
 }
 
 export function useSubscriptions() {
-  return useContext(SubscriptionContext);
+  return useContext(
+    SubscriptionContext
+  );
 }
