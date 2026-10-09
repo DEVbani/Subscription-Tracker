@@ -6,48 +6,84 @@ import {
 } from "react";
 
 import api from "../services/api";
+import { useAuth } from "./AuthContext";
 
-const SubscriptionContext =
-  createContext(null);
+const SubscriptionContext = createContext(null);
 
-export function SubscriptionProvider({
-  children,
-}) {
-  const [subscriptions, setSubscriptions] =
-    useState([]);
+export function SubscriptionProvider({ children }) {
+  const { user, loading: authLoading } = useAuth();
 
-  const [loading, setLoading] =
-    useState(true);
+  const [subscriptions, setSubscriptions] = useState([]);
+  const [loading, setLoading] = useState(true);
 
+  // Fetch subscriptions whenever the authenticated user changes.
+  useEffect(() => {
+    let cancelled = false;
+
+    async function fetchSubscriptions() {
+      // Wait until session restoration has finished.
+      if (authLoading) return;
+
+      // No logged-in user: never retain another user's data.
+      if (!user) {
+        setSubscriptions([]);
+        setLoading(false);
+        return;
+      }
+
+      // Clear previous user's data before fetching new data.
+      setSubscriptions([]);
+      setLoading(true);
+
+      try {
+        const response = await api.get("/subscriptions");
+
+        if (!cancelled) {
+          setSubscriptions(response.data.subscriptions);
+        }
+      } catch (error) {
+        if (!cancelled) {
+          console.error("Failed to load subscriptions", error);
+          setSubscriptions([]);
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    }
+
+    fetchSubscriptions();
+
+    // Ignore responses from an outdated user/session.
+    return () => {
+      cancelled = true;
+    };
+  }, [user?._id, authLoading]);
+
+  // Manually reload subscriptions when needed.
   async function loadSubscriptions() {
+    if (!user || authLoading) {
+      setSubscriptions([]);
+      return;
+    }
+
     try {
       setLoading(true);
 
-      const response =
-        await api.get("/subscriptions");
+      const response = await api.get("/subscriptions");
 
-      setSubscriptions(
-        response.data.subscriptions
-      );
+      setSubscriptions(response.data.subscriptions);
     } catch (error) {
-      console.error(
-        "Failed to load subscriptions",
-        error
-      );
+      console.error("Failed to load subscriptions", error);
+      throw error;
     } finally {
       setLoading(false);
     }
   }
 
-  useEffect(() => {
-    loadSubscriptions();
-  }, []);
-
   async function addSubscription(data) {
-    const response = await api.post(
-      "/subscriptions",
-      data
-    );
+    const response = await api.post("/subscriptions", data);
 
     setSubscriptions((current) => [
       ...current,
@@ -57,15 +93,11 @@ export function SubscriptionProvider({
     return response.data.subscription;
   }
 
-  async function updateSubscription(
-    id,
-    data
-  ) {
-    const response =
-      await api.patch(
-        `/subscriptions/${id}`,
-        data
-      );
+  async function updateSubscription(id, data) {
+    const response = await api.patch(
+      `/subscriptions/${id}`,
+      data
+    );
 
     setSubscriptions((current) =>
       current.map((subscription) =>
@@ -79,14 +111,11 @@ export function SubscriptionProvider({
   }
 
   async function deleteSubscription(id) {
-    await api.delete(
-      `/subscriptions/${id}`
-    );
+    await api.delete(`/subscriptions/${id}`);
 
     setSubscriptions((current) =>
       current.filter(
-        (subscription) =>
-          subscription._id !== id
+        (subscription) => subscription._id !== id
       )
     );
   }
@@ -95,7 +124,7 @@ export function SubscriptionProvider({
     <SubscriptionContext.Provider
       value={{
         subscriptions,
-        loading,
+        loading: authLoading || loading,
         addSubscription,
         updateSubscription,
         deleteSubscription,
@@ -108,7 +137,5 @@ export function SubscriptionProvider({
 }
 
 export function useSubscriptions() {
-  return useContext(
-    SubscriptionContext
-  );
+  return useContext(SubscriptionContext);
 }
